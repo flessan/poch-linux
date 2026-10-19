@@ -1,0 +1,7 @@
+# Hasil build Rust
+/target/
+
+# Hasil installer (file .exe besar, lebih baik dipublikasikan lewat GitHub Releases)
+/installer_output/
+
+.poch.iss
