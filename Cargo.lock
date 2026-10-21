@@ -243,12 +243,13 @@ dependencies = [
 
 [[package]]
 name = "poch"
-version = "0.3.0"
+version = "0.6.0"
 dependencies = [
  "fontdue",
  "image",
  "tiny-skia",
  "windows",
+ "windows-core",
  "winresource",
 ]
 
