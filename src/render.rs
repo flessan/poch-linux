@@ -92,7 +92,17 @@ fn notch_wave(w: f32, h: f32, t: f32) -> Path {
 }
 
 pub(crate) fn draw(a: &mut App) {
-    let mut g = a.gfx.take().unwrap();
+    // Kalau panic sebelumnya terjadi saat gfx sedang dipinjam, buat ulang supaya tidak panic berulang.
+    let mut g = match a.gfx.take() {
+        Some(g) => g,
+        None => Gfx {
+            pm: Pixmap::new(W as u32, H as u32).unwrap(),
+            text: Text::load(),
+            mask: Mask::new(W as u32, H as u32),
+            prev_box: (0, 0, W as usize, H as usize),
+            dirty: (0, 0, W as usize, H as usize),
+        },
+    };
     let (w, h) = (a.w, a.h);
     let p = ((h - 40.0) / (EXP_H - 40.0)).clamp(0.0, 1.0);
 
@@ -180,7 +190,7 @@ pub(crate) fn glow(g: &mut Gfx, shape: &Path, h: f32, rgb: (u8, u8, u8), a: f32)
 
 pub(crate) unsafe fn present(a: &mut App) {
     draw(a);
-    let g = a.gfx.as_ref().unwrap();
+    let Some(g) = a.gfx.as_ref() else { return; };
     let dst = std::slice::from_raw_parts_mut(a.bits as *mut u8, (W * H * 4) as usize);
     // RGBA (premultiplied) -> BGRA, only for the rows/columns that changed.
     let (bx0, by0, bx1, by1) = g.dirty;

@@ -64,7 +64,7 @@ pub(crate) fn check_reminder(a: &mut App) -> bool {
     if st.wHour < 8 || st.wHour >= 22 || a.water.ml >= a.water.goal {
         return false;
     }
-    a.show(2);
+    a.show(1); // slide Water (index 1)
     a.reminding = true;
     a.peek_until = Some(now + Duration::from_secs(7));
     true

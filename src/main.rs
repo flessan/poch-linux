@@ -153,10 +153,15 @@ struct App {
 static APP: Mutex<Option<App>> = Mutex::new(None);
 
 fn with_app<F: FnOnce(&mut App)>(f: F) {
-    if let Ok(mut g) = APP.try_lock() {
-        if let Some(a) = g.as_mut() {
-            f(a);
-        }
+    use std::sync::TryLockError;
+    // Kalau pernah ada panic saat lock dipegang, mutex jadi "poisoned": tetap pakai datanya, jangan mati total.
+    let mut g = match APP.try_lock() {
+        Ok(g) => g,
+        Err(TryLockError::Poisoned(p)) => p.into_inner(),
+        Err(TryLockError::WouldBlock) => return,
+    };
+    if let Some(a) = g.as_mut() {
+        f(a);
     }
 }
 
@@ -178,6 +183,18 @@ impl App {
 }
 
 fn main() -> Result<()> {
+    // Karena windows_subsystem = "windows", panic tidak terlihat. Catat ke file supaya penyebab crash bisa dilacak.
+    std::panic::set_hook(Box::new(|info| {
+        let line = format!("{:?} | {}\n", std::time::SystemTime::now(), info);
+        let p = data::data_path("crash.log");
+        if let Some(dir) = p.parent() {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        use std::io::Write;
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(p) {
+            let _ = f.write_all(line.as_bytes());
+        }
+    }));
     unsafe {
         let _ = SetProcessDPIAware();
         let hinst = GetModuleHandleW(None)?;

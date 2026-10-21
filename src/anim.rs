@@ -138,6 +138,15 @@ unsafe fn poll(a: &mut App) {
             changed = true;
         }
     }
+    // Window TOPMOST bisa "tenggelam" (Start menu, taskbar, app fullscreen, explorer restart, dll).
+    // Cek tiap ~1 detik; kalau flag topmost hilang, pasang lagi tanpa merebut fokus.
+    if a.tick_n % 10 == 0 {
+        let hwnd = HWND(a.hwnd as *mut c_void);
+        let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
+        if ex & WS_EX_TOPMOST.0 == 0 {
+            let _ = SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+    }
     if a.tick_n % 50 == 0 && a.water.roll() {
         redraw = true;
     }
