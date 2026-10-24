@@ -138,12 +138,27 @@ unsafe fn poll(a: &mut App) {
             changed = true;
         }
     }
-    // Window TOPMOST bisa "tenggelam" (Start menu, taskbar, app fullscreen, explorer restart, dll).
-    // Cek tiap ~1 detik; kalau flag topmost hilang, pasang lagi tanpa merebut fokus.
-    if a.tick_n % 10 == 0 {
+    // Selalu paling atas: kalau flag topmost hilang, ATAU ada window lain yang terlihat di atas Poch
+    // di z-order (taskbar Windows, menu bar kaca-shell, taskbar pihak ketiga, dll), naikkan lagi
+    // tanpa merebut fokus. Dicek tiap poll (100 ms), murah.
+    {
         let hwnd = HWND(a.hwnd as *mut c_void);
+        let my_thread = windows::Win32::System::Threading::GetCurrentThreadId();
         let ex = GetWindowLongW(hwnd, GWL_EXSTYLE) as u32;
-        if ex & WS_EX_TOPMOST.0 == 0 {
+        let mut covered = ex & WS_EX_TOPMOST.0 == 0;
+        if !covered {
+            let mut p = GetWindow(hwnd, GW_HWNDPREV).unwrap_or_default();
+            let mut guard = 0;
+            while !p.is_invalid() && guard < 128 {
+                if IsWindowVisible(p).as_bool() && GetWindowThreadProcessId(p, None) != my_thread {
+                    covered = true;
+                    break;
+                }
+                p = GetWindow(p, GW_HWNDPREV).unwrap_or_default();
+                guard += 1;
+            }
+        }
+        if covered {
             let _ = SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
     }
