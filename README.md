@@ -120,7 +120,7 @@ The script creates the `.tar.gz`, `.deb`, and AppImage staging directory. The wo
 
 ## <img src="https://api.iconify.design/lucide/database.svg?color=%23ff453a" width="20" align="top"> Your data
 
-Everything is saved as plain text in `%APPDATA%\poch`:
+Windows data is saved as plain text in `%APPDATA%\\poch`. Linux data lives in `$XDG_DATA_HOME/poch`, or `~/.local/share/poch` when `XDG_DATA_HOME` is not set:
 
 | File          | Content                                  |
 | ------------- | ---------------------------------------- |
