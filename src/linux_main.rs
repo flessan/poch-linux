@@ -42,6 +42,9 @@ struct App {
     font: Font,
     font_bold: Font,
     expanded: bool,
+    // Delay collapsing after a pointer-leave event. Wayland compositors may
+    // emit pointer events while applying a client-requested resize.
+    collapse_deadline: Option<Instant>,
     slide: usize,
     cursor: (f64, f64),
     water_ml: u32,
@@ -71,7 +74,10 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .with_title("Poch")
                 .with_decorations(false)
                 .with_transparent(true)
-                .with_resizable(false)
+                // This window changes size programmatically when expanded.
+                // Marking it non-resizable can cause Wayland compositors to
+                // ignore those size requests.
+                .with_resizable(true)
                 .with_window_level(WindowLevel::AlwaysOnTop)
                 .with_inner_size(PhysicalSize::new(IDLE_W, IDLE_H)),
         )?,
@@ -92,6 +98,7 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
         font_bold: Font::from_bytes(FONT_BOLD, FontSettings::default())
             .map_err(|e| format!("Could not load Instrument Sans bold: {e:?}"))?,
         expanded: false,
+        collapse_deadline: None,
         slide: 0,
         cursor: (0.0, 0.0),
         water_ml,
@@ -125,6 +132,9 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
                     app.window.request_redraw();
                 }
                 WindowEvent::CursorEntered { .. } => {
+                    // Cancel a pending collapse if the pointer returns while
+                    // the compositor is still applying a resize/configure.
+                    app.collapse_deadline = None;
                     if !app.expanded {
                         app.expanded = true;
                         resize_window(&app.window, true);
@@ -133,9 +143,10 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 WindowEvent::CursorLeft { .. } => {
                     if app.expanded && app.input_mode.is_none() {
-                        app.expanded = false;
-                        resize_window(&app.window, false);
-                        app.window.request_redraw();
+                        // Avoid flicker if resizing causes a transient leave
+                        // event on Wayland.
+                        app.collapse_deadline =
+                            Some(Instant::now() + Duration::from_millis(350));
                     }
                 }
                 WindowEvent::CursorMoved { position, .. } => {
@@ -217,13 +228,28 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
                 _ => {}
             },
             Event::AboutToWait => {
+                let now = Instant::now();
+                if app.collapse_deadline.is_some_and(|deadline| now >= deadline) {
+                    app.collapse_deadline = None;
+                    if app.expanded && app.input_mode.is_none() {
+                        app.expanded = false;
+                        resize_window(&app.window, false);
+                        app.window.request_redraw();
+                    }
+                }
+
                 if app.last_refresh.elapsed() >= Duration::from_secs(2) {
                     app.refresh_media();
                 }
                 app.window.request_redraw();
-                target.set_control_flow(ControlFlow::WaitUntil(
-                    Instant::now() + Duration::from_secs(1),
-                ));
+
+                // Wake for either the regular UI refresh or the pending
+                // collapse, whichever comes first.
+                let next_refresh = Instant::now() + Duration::from_secs(1);
+                let next_wake = app
+                    .collapse_deadline
+                    .map_or(next_refresh, |deadline| deadline.min(next_refresh));
+                target.set_control_flow(ControlFlow::WaitUntil(next_wake));
             }
             _ => {}
         }
