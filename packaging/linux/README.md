@@ -8,7 +8,7 @@ The Linux workflow produces:
 
 - **AppImage** for a portable download.
 - **tar.gz** with the executable, desktop entry, icon and license.
-- **Debian package** for Debian/Ubuntu-based distributions.
+- **Debian package** for Debian/Ubuntu-based distributions.\n- **RPM package** for Fedora/RHEL-compatible and openSUSE-family distributions.
 
 Builds are published as workflow artifacts on pushes and pull requests. Release builds attach the packages to the GitHub Release.
 
@@ -51,10 +51,10 @@ Install Rust stable and your distribution's build dependencies for `winit`/graph
 cargo build --release
 ```
 
-On Linux, Cargo selects the native Linux backend automatically. To prepare a tarball, Debian package and AppImage staging directory:
+On Linux, Cargo selects the native Linux backend automatically. To prepare a tarball, Debian/RPM packages and AppImage staging directory:
 
 ```sh
-sudo apt install imagemagick dpkg-dev
+sudo apt install imagemagick dpkg-dev rpm
 bash scripts/package-linux.sh
 ```
 
