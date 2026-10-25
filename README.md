@@ -68,8 +68,9 @@ Linux packages are built automatically by [the Linux workflow](.github/workflows
 | Format | Use |
 | --- | --- |
 | `.AppImage` | Portable app bundle |
-| `.tar.gz` | Standalone executable, desktop entry, icon and Linux instructions |
-| `.deb` | Debian and Ubuntu-based distributions |\n| `.rpm` | Fedora, RHEL-compatible and openSUSE-family distributions |
+| `.tar.gz` | Executable bundle, desktop entry, icon and Linux instructions (uses system graphics libraries) |
+| `.deb` | Debian and Ubuntu-based distributions |
+| `.rpm` | Fedora, RHEL-compatible and openSUSE-family distributions |
 
 Linux is an early port. Clock, MPRIS media controls through optional `playerctl`, water tracking, tasks, file-path shelf and notes are implemented. Windows-only busy detection, global hotkey, drag-out support, media artwork and some animations are not ported yet. Compositor behavior for transparent, always-on-top windows and positioning varies, especially on Wayland. See [Linux usage and limitations](packaging/linux/README.md).
 
