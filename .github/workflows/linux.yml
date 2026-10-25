@@ -32,7 +32,8 @@ jobs:
             libxinerama-dev \
             libxkbcommon-dev \
             libxrandr-dev \
-            pkg-config
+            pkg-config \\
+            rpm
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Build Linux backend
