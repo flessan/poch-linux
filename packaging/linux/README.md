@@ -7,7 +7,7 @@ Poch has an early native Linux backend for x86_64 desktops. It is a floating, to
 The Linux workflow produces:
 
 - **AppImage** for a portable download.
-- **tar.gz** with the executable, desktop entry, icon and license.
+- **tar.gz** with the executable, desktop entry, icon and license; it uses system graphics libraries.
 - **Debian package** for Debian/Ubuntu-based distributions.\n- **RPM package** for Fedora/RHEL-compatible and openSUSE-family distributions.
 
 Builds are published as workflow artifacts on pushes and pull requests. Release builds attach the packages to the GitHub Release.
@@ -35,6 +35,12 @@ Install the Debian package with:
 sudo apt install ./poch_*_amd64.deb
 ```
 
+On Fedora-family systems, install the RPM with:
+
+```sh
+sudo dnf install ./poch-*.rpm
+```
+
 ## Requirements and limitations
 
 Poch uses your desktop's native display stack and graphics drivers. The AppImage bundles application-side libraries where possible, but host graphics drivers are not bundled. The optional Music integration uses the MPRIS interface through `playerctl`; install `playerctl` from your distribution's package manager to control compatible players.
@@ -54,7 +60,7 @@ cargo build --release
 On Linux, Cargo selects the native Linux backend automatically. To prepare a tarball, Debian/RPM packages and AppImage staging directory:
 
 ```sh
-sudo apt install imagemagick dpkg-dev rpm
+sudo apt install imagemagick dpkg-dev rpm rpm
 bash scripts/package-linux.sh
 ```
 
