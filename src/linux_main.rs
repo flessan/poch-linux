@@ -86,9 +86,9 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
         window,
         pixels,
         font: Font::from_bytes(FONT_REGULAR, FontSettings::default())
-            .map_err(|e| format!("Could not load Instrument Sans regular: {e}"))?,
+            .map_err(|e| format!("Could not load Instrument Sans regular: {e:?}"))?,
         font_bold: Font::from_bytes(FONT_BOLD, FontSettings::default())
-            .map_err(|e| format!("Could not load Instrument Sans bold: {e}"))?,
+            .map_err(|e| format!("Could not load Instrument Sans bold: {e:?}"))?,
         expanded: false,
         slide: 0,
         cursor: (0.0, 0.0),
@@ -162,7 +162,7 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 WindowEvent::KeyboardInput { event, .. } if app.input_mode.is_some() => {
                     if event.state == ElementState::Pressed {
-                        match event.logical_key {
+                        match &event.logical_key {
                             Key::Named(NamedKey::Enter) => finish_input(&mut app, true),
                             Key::Named(NamedKey::Escape) => finish_input(&mut app, false),
                             Key::Named(NamedKey::Backspace) => {
