@@ -49,23 +49,41 @@ use windows::Win32::UI::Shell::{DragFinish, DragQueryFileW, ShellExecuteW, HDROP
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 // ---------------------------------------------------------------- modul (satu file per fitur)
+#[path = "anim.rs"]
 mod anim;
+#[path = "busy.rs"]
 mod busy;
+#[path = "clock.rs"]
 mod clock;
+#[path = "config.rs"]
 mod config;
+#[path = "data.rs"]
 mod data;
+#[path = "dragdrop.rs"]
 mod dragdrop;
+#[path = "eye.rs"]
 mod eye;
+#[path = "gfx.rs"]
 mod gfx;
+#[path = "icon.rs"]
 mod icon;
+#[path = "input.rs"]
 mod input;
+#[path = "music.rs"]
 mod music;
+#[path = "nav.rs"]
 mod nav;
+#[path = "note.rs"]
 mod note;
+#[path = "render.rs"]
 mod render;
+#[path = "shelf.rs"]
 mod shelf;
+#[path = "todo.rs"]
 mod todo;
+#[path = "water.rs"]
 mod water;
+#[path = "window.rs"]
 mod window;
 
 use anim::{schedule, target, tick};
