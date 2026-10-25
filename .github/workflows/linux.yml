@@ -38,7 +38,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Build Linux backend
         run: cargo build --release
-      - name: Create tar.gz, Debian package and AppDir
+      - name: Create tar.gz, DEB/RPM packages and AppDir
         run: bash scripts/package-linux.sh
       - name: Download AppImage tools
         run: |
