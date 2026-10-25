@@ -1,0 +1,42 @@
+Name:           poch
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        A small desktop notch for music, water tracking, tasks, files and notes
+License:        MIT
+URL:            https://github.com/flessan/poch-linux
+Source0:        poch-%{version}-linux-x86_64.tar.gz
+BuildArch:      x86_64
+
+Requires:       alsa-lib
+Requires:       mesa-libEGL
+Requires:       vulkan-loader
+Requires:       wayland
+Requires:       libX11
+Requires:       libXcursor
+Requires:       libXi
+Requires:       libXinerama
+Requires:       libXrandr
+Requires:       libxkbcommon
+
+%description
+Poch is a small always-on-top desktop widget with media controls, a water
+tracker, a to-do list, a file shelf and a local notepad.
+
+%prep
+%setup -q -n poch-%{version}-linux-x86_64
+
+%build
+
+%install
+rm -rf %{buildroot}
+install -D -m 0755 poch %{buildroot}%{_bindir}/poch
+install -D -m 0644 poch.desktop %{buildroot}%{_datadir}/applications/poch.desktop
+install -D -m 0644 poch.png %{buildroot}%{_datadir}/icons/hicolor/256x256/apps/poch.png
+
+%files
+%license LICENSE
+%{_bindir}/poch
+%{_datadir}/applications/poch.desktop
+%{_datadir}/icons/hicolor/256x256/apps/poch.png
+
+

@@ -1,0 +1,84 @@
+name: Linux builds
+
+on:
+  push:
+    branches: [main, feat/linux-support]
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  linux-x86_64:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install native build and packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            dpkg-dev \
+            imagemagick \
+            libasound2-dev \
+            libegl1-mesa-dev \
+            libvulkan-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxinerama-dev \
+            libxkbcommon-dev \
+            libxrandr-dev \
+            pkg-config \
+            rpm
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build Linux backend
+        run: cargo build --release
+      - name: Create tar.gz, DEB/RPM packages and AppDir
+        run: bash scripts/package-linux.sh
+      - name: Download AppImage tools
+        run: |
+          curl -fsSL \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
+            -o linuxdeploy
+          curl -fsSL \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+            -o appimagetool
+          chmod +x linuxdeploy appimagetool
+      - name: Bundle AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          ARCH: x86_64
+        run: |
+          ./linuxdeploy \
+            --appdir dist/Poch.AppDir \
+            --executable dist/Poch.AppDir/usr/bin/poch \
+            --desktop-file dist/Poch.AppDir/poch.desktop \
+            --icon-file dist/Poch.AppDir/poch.png
+          VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n 1)"
+          ./appimagetool --no-appstream \
+            dist/Poch.AppDir "dist/Poch-${VERSION}-x86_64.AppImage"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: poch-linux-x86_64
+          path: |
+            dist/poch-*.tar.gz
+            dist/poch_*.deb
+            dist/*.rpm
+            dist/Poch-*.AppImage
+          if-no-files-found: error
+          retention-days: 14
+      - name: Attach packages to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/poch-*.tar.gz
+            dist/poch_*.deb
+            dist/*.rpm
+            dist/Poch-*.AppImage
