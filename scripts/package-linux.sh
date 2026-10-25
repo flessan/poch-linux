@@ -15,8 +15,12 @@ if ! command -v convert >/dev/null 2>&1; then
   echo "ImageMagick is required to convert icon.ico to PNG." >&2
   exit 1
 fi
+if ! command -v rpmbuild >/dev/null 2>&1; then
+  echo "The rpm package is required to build an RPM." >&2
+  exit 1
+fi
 
-rm -rf "${BUNDLE}" "${DIST}/Poch.AppDir" "${DIST}/deb-root"
+rm -rf "${BUNDLE}" "${DIST}/Poch.AppDir" "${DIST}/deb-root" "${DIST}/rpmbuild"
 mkdir -p "${DIST}" "${BUNDLE}" \
   "${DIST}/deb-root/DEBIAN" \
   "${DIST}/deb-root/usr/bin" \
@@ -35,6 +39,14 @@ install -m 644 "${ROOT}/packaging/linux/README.md" "${BUNDLE}/README.md"
 install -m 644 "${ROOT}/LICENSE" "${BUNDLE}/LICENSE"
 
 tar -C "${DIST}" -czf "${DIST}/poch-${VERSION}-linux-x86_64.tar.gz" "poch-${VERSION}-linux-x86_64"
+
+# RPM package for Fedora, RHEL-compatible and openSUSE-family distributions.
+RPMROOT="${DIST}/rpmbuild"
+mkdir -p "${RPMROOT}/BUILD" "${RPMROOT}/RPMS" "${RPMROOT}/SOURCES" "${RPMROOT}/SPECS" "${RPMROOT}/SRPMS"
+cp "${DIST}/poch-${VERSION}-linux-x86_64.tar.gz" "${RPMROOT}/SOURCES/"
+sed "s/@VERSION@/${VERSION}/g" "${ROOT}/packaging/rpm/poch.spec.in" > "${RPMROOT}/SPECS/poch.spec"
+rpmbuild --define "_topdir ${RPMROOT}" -bb "${RPMROOT}/SPECS/poch.spec"
+find "${RPMROOT}/RPMS" -type f -name '*.rpm' -exec cp {} "${DIST}/" \;
 
 DEBROOT="${DIST}/deb-root"
 install -m 755 "${ROOT}/target/release/poch" "${DEBROOT}/usr/bin/poch"
@@ -67,4 +79,4 @@ exec "$HERE/usr/bin/poch" "$@"
 APPRUN
 chmod 755 "${APPDIR}/AppRun"
 
-echo "Created Linux tar.gz, Debian package, and AppImage staging directory in ${DIST}."
+echo "Created Linux tar.gz, Debian/RPM packages, and AppImage staging directory in ${DIST}."
