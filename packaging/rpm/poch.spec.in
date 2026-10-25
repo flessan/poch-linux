@@ -39,3 +39,4 @@ install -D -m 0644 poch.png %{buildroot}%{_datadir}/icons/hicolor/256x256/apps/p
 %{_datadir}/applications/poch.desktop
 %{_datadir}/icons/hicolor/256x256/apps/poch.png
 
+
