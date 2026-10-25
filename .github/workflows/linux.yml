@@ -32,7 +32,7 @@ jobs:
             libxinerama-dev \
             libxkbcommon-dev \
             libxrandr-dev \
-            pkg-config \\
+            pkg-config \
             rpm
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -69,6 +69,7 @@ jobs:
           path: |
             dist/poch-*.tar.gz
             dist/poch_*.deb
+            dist/*.rpm
             dist/Poch-*.AppImage
           if-no-files-found: error
           retention-days: 14
@@ -79,4 +80,5 @@ jobs:
           files: |
             dist/poch-*.tar.gz
             dist/poch_*.deb
+            dist/*.rpm
             dist/Poch-*.AppImage
