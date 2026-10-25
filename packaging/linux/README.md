@@ -8,7 +8,8 @@ The Linux workflow produces:
 
 - **AppImage** for a portable download.
 - **tar.gz** with the executable, desktop entry, icon and license; it uses system graphics libraries.
-- **Debian package** for Debian/Ubuntu-based distributions.\n- **RPM package** for Fedora/RHEL-compatible and openSUSE-family distributions.
+- **Debian package** for Debian/Ubuntu-based distributions.
+- **RPM package** for Fedora/RHEL-compatible and openSUSE-family distributions.
 
 Builds are published as workflow artifacts on pushes and pull requests. Release builds attach the packages to the GitHub Release.
 
