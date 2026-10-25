@@ -48,6 +48,8 @@ struct App {
     water_goal: u32,
     todos: Vec<(bool, String)>,
     shelf: Vec<String>,
+    todo_scroll: usize,
+    shelf_scroll: usize,
     note: String,
     input: String,
     input_mode: Option<InputMode>,
@@ -96,6 +98,8 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
         water_goal,
         todos: load_todos(&data_dir),
         shelf: load_shelf(&data_dir),
+        todo_scroll: 0,
+        shelf_scroll: 0,
         note: fs::read_to_string(data_dir.join("notepad.txt")).unwrap_or_default(),
         input: String::new(),
         input_mode: None,
@@ -144,11 +148,28 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
                         MouseScrollDelta::PixelDelta(p) => p.y as f32,
                     };
                     if direction.abs() > 0.0 && app.input_mode.is_none() {
-                        app.slide = if direction < 0.0 {
-                            (app.slide + 1) % 5
+                        let moving_down = direction < 0.0;
+                        if app.slide == 2 && app.todos.len() > 4 {
+                            let max = app.todos.len() - 4;
+                            app.todo_scroll = if moving_down {
+                                (app.todo_scroll + 1).min(max)
+                            } else {
+                                app.todo_scroll.saturating_sub(1)
+                            };
+                        } else if app.slide == 3 && app.shelf.len() > 4 {
+                            let max = app.shelf.len() - 4;
+                            app.shelf_scroll = if moving_down {
+                                (app.shelf_scroll + 1).min(max)
+                            } else {
+                                app.shelf_scroll.saturating_sub(1)
+                            };
                         } else {
-                            (app.slide + 4) % 5
-                        };
+                            app.slide = if moving_down {
+                                (app.slide + 1) % 5
+                            } else {
+                                (app.slide + 4) % 5
+                            };
+                        }
                         app.window.request_redraw();
                     }
                 }
@@ -405,8 +426,8 @@ fn handle_click(app: &mut App) {
             if y >= 70.0 && y <= 103.0 && x > 440.0 {
                 app.input_mode = Some(InputMode::Task);
                 app.input.clear();
-            } else if y >= 104.0 && y < 200.0 {
-                let index = ((y - 104.0) / 24.0) as usize;
+            } else if y >= 102.0 && y < 200.0 {
+                let index = app.todo_scroll + ((y - 102.0) / 24.0) as usize;
                 if let Some(item) = app.todos.get_mut(index) {
                     item.0 = !item.0;
                     app.save_todos();
@@ -417,8 +438,8 @@ fn handle_click(app: &mut App) {
             if y >= 70.0 && y <= 103.0 && x > 440.0 {
                 app.input_mode = Some(InputMode::Shelf);
                 app.input.clear();
-            } else if y >= 104.0 && y < 200.0 {
-                let index = ((y - 104.0) / 26.0) as usize;
+            } else if y >= 102.0 && y < 200.0 {
+                let index = app.shelf_scroll + ((y - 102.0) / 26.0) as usize;
                 if let Some(path) = app.shelf.get(index).cloned() {
                     if Path::new(&path).exists() {
                         let _ = Command::new("xdg-open").arg(path).spawn();
@@ -552,7 +573,7 @@ fn draw_todos(pm: &mut Pixmap, app: &App) {
     if app.todos.is_empty() {
         draw_text(pm, &app.font, "Nothing here yet. Add a task to get started.", 29.0, 119.0, 14.0, MUTED);
     }
-    for (i, (done, item)) in app.todos.iter().take(4).enumerate() {
+    for (i, (done, item)) in app.todos.iter().skip(app.todo_scroll).take(4).enumerate() {
         let y = 102.0 + i as f32 * 24.0;
         round_rect(pm, 28.0, y, 544.0, 21.0, 7.0, (31, 33, 38, 255));
         draw_text(pm, &app.font_bold, if *done { "x" } else { " " }, 39.0, y + 4.0, 12.0, ACCENT);
@@ -570,7 +591,7 @@ fn draw_shelf(pm: &mut Pixmap, app: &App) {
     if app.shelf.is_empty() {
         draw_text(pm, &app.font, "Save a file or folder path here for quick access.", 29.0, 119.0, 14.0, MUTED);
     }
-    for (i, path) in app.shelf.iter().take(4).enumerate() {
+    for (i, path) in app.shelf.iter().skip(app.shelf_scroll).take(4).enumerate() {
         let y = 102.0 + i as f32 * 26.0;
         round_rect(pm, 28.0, y, 544.0, 23.0, 7.0, (31, 33, 38, 255));
         let label = Path::new(path).file_name().and_then(|s| s.to_str()).unwrap_or(path);
