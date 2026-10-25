@@ -31,7 +31,7 @@ convert "${ROOT}/icon.ico[0]" -resize 256x256 "PNG32:${DIST}/poch.png"
 install -m 755 "${ROOT}/target/release/poch" "${BUNDLE}/poch"
 install -m 644 "${ROOT}/packaging/linux/poch.desktop" "${BUNDLE}/poch.desktop"
 install -m 644 "${DIST}/poch.png" "${BUNDLE}/poch.png"
-install -m 644 "${ROOT}/README.md" "${BUNDLE}/README.md"
+install -m 644 "${ROOT}/packaging/linux/README.md" "${BUNDLE}/README.md"
 install -m 644 "${ROOT}/LICENSE" "${BUNDLE}/LICENSE"
 
 tar -C "${DIST}" -czf "${DIST}/poch-${VERSION}-linux-x86_64.tar.gz" "poch-${VERSION}-linux-x86_64"
