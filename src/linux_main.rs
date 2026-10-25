@@ -11,6 +11,10 @@ use chrono::Local;
 use fontdue::{Font, FontSettings};
 use pixels::{Pixels, SurfaceTexture};
 use tiny_skia::{Color, FillRule, Paint, PathBuilder, Pixmap, Transform};
+use tray_icon::{
+    menu::{Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem},
+    MouseButton as TrayMouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent,
+};
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
     event::{ElementState, Event, MouseButton, MouseScrollDelta, WindowEvent},
@@ -36,9 +40,19 @@ enum InputMode {
     Note,
 }
 
+#[derive(Debug)]
+enum UserEvent {
+    TrayIcon(TrayIconEvent),
+    TrayMenu(MenuEvent),
+}
+
 struct App {
     window: Arc<Window>,
     pixels: Pixels<'static>,
+    // Keep the tray icon alive for the lifetime of the application.
+    _tray: TrayIcon,
+    tray_toggle_id: MenuId,
+    tray_quit_id: MenuId,
     font: Font,
     font_bold: Font,
     expanded: bool,
@@ -65,8 +79,18 @@ struct App {
 }
 
 pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let event_loop = EventLoop::new()?;
+    let event_loop = EventLoop::<UserEvent>::with_user_event().build()?;
     event_loop.set_control_flow(ControlFlow::WaitUntil(Instant::now() + Duration::from_secs(1)));
+
+    // Forward tray callbacks into winit so the event loop wakes immediately.
+    let proxy = event_loop.create_proxy();
+    TrayIconEvent::set_event_handler(Some(move |event| {
+        let _ = proxy.send_event(UserEvent::TrayIcon(event));
+    }));
+    let proxy = event_loop.create_proxy();
+    MenuEvent::set_event_handler(Some(move |event| {
+        let _ = proxy.send_event(UserEvent::TrayMenu(event));
+    }));
 
     let window = Arc::new(
         event_loop.create_window(
@@ -74,15 +98,34 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .with_title("Poch")
                 .with_decorations(false)
                 .with_transparent(true)
-                // This window changes size programmatically when expanded.
-                // Marking it non-resizable can cause Wayland compositors to
-                // ignore those size requests.
-                .with_resizable(true)
+                // Keep this as a fixed-size widget: Hyprland may tile a
+                // resizable toplevel instead of treating it like a small notch.
+                // Programmatic resizing is still requested below.
+                .with_resizable(false)
                 .with_window_level(WindowLevel::AlwaysOnTop)
                 .with_inner_size(PhysicalSize::new(IDLE_W, IDLE_H)),
         )?,
     );
     center_window(&window, IDLE_W);
+
+    let tray_menu = Menu::new();
+    let toggle_item = MenuItem::new("Show / Hide Poch", true, None);
+    let quit_item = MenuItem::new("Quit Poch", true, None);
+    tray_menu.append(&toggle_item)?;
+    tray_menu.append(&PredefinedMenuItem::separator())?;
+    tray_menu.append(&quit_item)?;
+    let tray_toggle_id = toggle_item.id().clone();
+    let tray_quit_id = quit_item.id().clone();
+
+    let icon_image = image::load_from_memory(include_bytes!("../icon.ico"))?.into_rgba8();
+    let (icon_width, icon_height) = icon_image.dimensions();
+    let tray_image = tray_icon::Icon::from_rgba(icon_image.into_raw(), icon_width, icon_height)?;
+    let tray = TrayIconBuilder::new()
+        .with_menu(Box::new(tray_menu))
+        .with_tooltip("Poch")
+        .with_icon(tray_image)
+        .build()?;
+
     let size = window.inner_size();
     let surface = SurfaceTexture::new(size.width.max(1), size.height.max(1), Arc::clone(&window));
     let pixels = Pixels::new(size.width.max(1), size.height.max(1), surface)?;
@@ -93,6 +136,9 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App {
         window,
         pixels,
+        _tray: tray,
+        tray_toggle_id,
+        tray_quit_id,
         font: Font::from_bytes(FONT_REGULAR, FontSettings::default())
             .map_err(|e| format!("Could not load Instrument Sans regular: {e:?}"))?,
         font_bold: Font::from_bytes(FONT_BOLD, FontSettings::default())
@@ -122,6 +168,23 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
 
     event_loop.run(move |event, target| {
         match event {
+            Event::UserEvent(UserEvent::TrayMenu(event)) => {
+                if event.id == app.tray_toggle_id {
+                    toggle_window_visibility(&mut app);
+                } else if event.id == app.tray_quit_id {
+                    target.exit();
+                }
+            }
+            Event::UserEvent(UserEvent::TrayIcon(event)) => {
+                if let TrayIconEvent::Click {
+                    button: TrayMouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } = event
+                {
+                    toggle_window_visibility(&mut app);
+                }
+            }
             Event::WindowEvent { window_id, event } if window_id == app.window.id() => match event {
                 WindowEvent::CloseRequested => target.exit(),
                 WindowEvent::Resized(size) => {
@@ -353,6 +416,18 @@ fn load_shelf(dir: &Path) -> Vec<String> {
         .take(5)
         .map(str::to_owned)
         .collect()
+}
+
+fn toggle_window_visibility(app: &mut App) {
+    if app.window.is_visible().unwrap_or(true) {
+        app.window.set_visible(false);
+    } else {
+        app.expanded = false;
+        app.collapse_deadline = None;
+        resize_window(&app.window, false);
+        app.window.set_visible(true);
+        app.window.request_redraw();
+    }
 }
 
 fn center_window(window: &Window, width: u32) {
