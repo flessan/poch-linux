@@ -50,6 +50,19 @@ The Linux backend is an initial port, not feature parity with Windows yet. Clock
 
 Data is stored under `$XDG_DATA_HOME/poch`, or `~/.local/share/poch` when `XDG_DATA_HOME` is not set.
 
+## Hyprland: floating notch and system tray
+
+Hyprland controls whether a normal Wayland window floats and stays above other windows. Poch requests an always-on-top window level, but the compositor can override that request. Add rules like these to your Hyprland config to keep the notch floating and pinned across workspaces:
+
+```ini
+windowrule = match:title ^(Poch)$, float on
+windowrule = match:title ^(Poch)$, pin on
+```
+
+Reload Hyprland after changing the config. Since Poch resizes itself between idle and expanded modes, keep it floating rather than forcing a fixed window size in a rule.
+
+Poch also provides a StatusNotifierItem system-tray icon with **Show / Hide Poch** and **Quit Poch** menu actions. A tray host must be running for the icon to appear. On Hyprland, use a bar or shell with a system-tray/StatusNotifierItem host enabled, such as Waybar's `tray` module. If your shell does not provide a tray host, the widget can still run, but the tray icon may not be visible.
+
 ## Build from source
 
 Install Rust stable and your distribution's build dependencies for `winit`/graphics. Then run:
