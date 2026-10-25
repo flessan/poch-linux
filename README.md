@@ -69,7 +69,7 @@ Linux packages are built automatically by [the Linux workflow](.github/workflows
 | --- | --- |
 | `.AppImage` | Portable app bundle |
 | `.tar.gz` | Standalone executable, desktop entry, icon and Linux instructions |
-| `.deb` | Debian and Ubuntu-based distributions |
+| `.deb` | Debian and Ubuntu-based distributions |\n| `.rpm` | Fedora, RHEL-compatible and openSUSE-family distributions |
 
 Linux is an early port. Clock, MPRIS media controls through optional `playerctl`, water tracking, tasks, file-path shelf and notes are implemented. Windows-only busy detection, global hotkey, drag-out support, media artwork and some animations are not ported yet. Compositor behavior for transparent, always-on-top windows and positioning varies, especially on Wayland. See [Linux usage and limitations](packaging/linux/README.md).
 
@@ -95,7 +95,7 @@ sudo apt install imagemagick dpkg-dev
 bash scripts/package-linux.sh
 ```
 
-The script creates the `.tar.gz`, `.deb`, and AppImage staging directory. The workflow also runs `linuxdeploy` and `appimagetool` to generate the final AppImage.
+The script creates the `.tar.gz`, `.deb`, and `.rpm` packages plus the AppImage staging directory. The workflow also runs `linuxdeploy` and `appimagetool` to generate the final AppImage.
 
 ---
 
