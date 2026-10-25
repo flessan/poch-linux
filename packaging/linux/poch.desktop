@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Poch
+Comment=A small desktop notch for music, water, tasks, files and notes
+Exec=poch
+Icon=poch
+Terminal=false
+Categories=Utility;
+StartupNotify=false
