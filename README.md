@@ -4,9 +4,9 @@
 
 # Poch
 
-**A tiny notch for the top of your Windows screen. Music, clock, water, to-do, file shelf and notes, all in one place.**
+**A tiny desktop notch for music, clock, water tracking, to-do, a file shelf and notes. Windows is the mature build; Linux support is an early native port.**
 
-![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D4?logo=windows&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20Linux%20(early)-0078D4?logo=linux&logoColor=white)
 ![Language](https://img.shields.io/badge/built%20with-Rust-DEA584?logo=rust&logoColor=black)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -16,7 +16,7 @@
 
 ## <img src="https://api.iconify.design/lucide/info.svg?color=%23ff453a" width="20" align="top"> About
 
-Poch sits flush against the top edge of your screen as a small black notch. Hover over it and it expands into a carousel of mini apps. Move away and it shrinks back down. It is a single, lightweight `.exe` with no runtime to install.
+On Windows, Poch sits flush against the top edge of your screen as a small black notch. Hover over it and it expands into a carousel of mini apps, then shrinks back down when you move away. The Windows build is a single `.exe`. Linux has a separate native backend and early support for the same core ideas.
 
 - Layered per-pixel alpha window, software rendered with `tiny-skia`
 - Small memory footprint: embedded fonts, bounded glyph cache, working set trimmed when idle
@@ -55,21 +55,43 @@ Swipe, scroll, drag, use the arrow buttons or click the dots to move through an 
 
 | Requirement                             | Version                                                           |
 | --------------------------------------- | ----------------------------------------------------------------- |
-| Operating system                        | Windows 10 or Windows 11                                          |
+| Operating system                        | Windows 10/11, or Linux x86_64 (early support)                    |
 | Build tools (only to build from source) | [Rust](https://www.rust-lang.org/tools/install) (stable)          |
 | Installer (optional)                    | [Inno Setup](https://jrsoftware.org/isinfo.php), using `poch.iss` |
+
+Linux packages are built automatically by [the Linux workflow](.github/workflows/linux.yml). Available formats are:
+
+| Format | Use |
+| --- | --- |
+| `.AppImage` | Portable app bundle |
+| `.tar.gz` | Standalone executable, desktop entry, icon and Linux instructions |
+| `.deb` | Debian and Ubuntu-based distributions |
+
+Linux is an early port. Clock, MPRIS media controls through optional `playerctl`, water tracking, tasks, file-path shelf and notes are implemented. Windows-only busy detection, global hotkey, drag-out support, media artwork and some animations are not ported yet. Compositor behavior for transparent, always-on-top windows and positioning varies, especially on Wayland. See [Linux usage and limitations](packaging/linux/README.md).
 
 ---
 
 ## <img src="https://api.iconify.design/lucide/hammer.svg?color=%23ff453a" width="20" align="top"> Build from source
 
 ```powershell
-git clone <your-repo-url>
-cd poch
+git clone https://github.com/flessan/poch-linux.git
+cd poch-linux
 cargo build --release
 ```
 
-The executable is created at `target\release\poch.exe`. To make a setup installer, open `poch.iss` in Inno Setup and compile it.
+On Windows, the executable is created at `target\release\poch.exe`. To make a setup installer, open `poch.iss` in Inno Setup and compile it.
+
+On Linux, Cargo automatically selects the native Linux backend:
+
+```sh
+git clone https://github.com/flessan/poch-linux.git
+cd poch-linux
+cargo build --release
+sudo apt install imagemagick dpkg-dev
+bash scripts/package-linux.sh
+```
+
+The script creates the `.tar.gz`, `.deb`, and AppImage staging directory. The workflow also runs `linuxdeploy` and `appimagetool` to generate the final AppImage.
 
 ---
 
@@ -77,7 +99,7 @@ The executable is created at `target\release\poch.exe`. To make a setup installe
 
 | File                                         | Purpose                                                            |
 | -------------------------------------------- | ------------------------------------------------------------------ |
-| `main.rs`                                    | App state, window creation, message loop                           |
+| `main.rs`                                    | Dispatches to the platform-specific backend                        |\n| `windows_main.rs`                             | Original Win32 application and message loop                        |\n| `linux_main.rs`                               | Native Linux window, rendering and core interactions               |
 | `window.rs`                                  | Win32 window procedure (mouse, keyboard, timer, hotkey, file drop) |
 | `render.rs`, `gfx.rs`                        | Frame drawing, notch shape, text and shape helpers                 |
 | `anim.rs`                                    | Spring animation, timers, hover, busy and media polling            |
