@@ -26,6 +26,8 @@ On Windows, Poch sits flush against the top edge of your screen as a small black
 
 ## <img src="https://api.iconify.design/lucide/layout-grid.svg?color=%23ff453a" width="20" align="top"> Slides
 
+The feature table below describes the full Windows build. Linux support and current gaps are listed in the Install section.
+
 Swipe, scroll, drag, use the arrow buttons or click the dots to move through an endless carousel.
 
 |                                           Icon                                            | Slide     | What it does                                                                                                                                                      |
@@ -39,6 +41,8 @@ Swipe, scroll, drag, use the arrow buttons or click the dots to move through an 
 ---
 
 ## <img src="https://api.iconify.design/lucide/sparkles.svg?color=%23ff453a" width="20" align="top"> Features
+
+The details below refer to Windows unless explicitly stated otherwise.
 
 |                                          Icon                                           | Feature        | Details                                                                                                             |
 | :-------------------------------------------------------------------------------------: | -------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -99,7 +103,9 @@ The script creates the `.tar.gz`, `.deb`, and AppImage staging directory. The wo
 
 | File                                         | Purpose                                                            |
 | -------------------------------------------- | ------------------------------------------------------------------ |
-| `main.rs`                                    | Dispatches to the platform-specific backend                        |\n| `windows_main.rs`                             | Original Win32 application and message loop                        |\n| `linux_main.rs`                               | Native Linux window, rendering and core interactions               |
+| `main.rs`                                    | Dispatches to the platform-specific backend                        |
+| `windows_main.rs`                             | Original Win32 application and message loop                        |
+| `linux_main.rs`                               | Native Linux window, rendering and core interactions               |
 | `window.rs`                                  | Win32 window procedure (mouse, keyboard, timer, hotkey, file drop) |
 | `render.rs`, `gfx.rs`                        | Frame drawing, notch shape, text and shape helpers                 |
 | `anim.rs`                                    | Spring animation, timers, hover, busy and media polling            |
